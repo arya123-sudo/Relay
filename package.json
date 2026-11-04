@@ -1,0 +1,1 @@
+{"description":"Relay — reconstructs a departing member's project knowledge from GitHub activity into an evidence-linked, confidence-labelled handover with a 0-100 completeness score.","name":"relay-handover-intelligence","private":true,"scripts":{"test":"node tests/engine.test.js"},"version":"1.0.0"}
