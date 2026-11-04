@@ -1,0 +1,70 @@
+/* Relay — Handover Intelligence */
+:root{--bg:#0f1220;--panel:#171a2e;--panel2:#1e2242;--line:#2c3055;--txt:#eef0ff;--mut:#9aa1c7;--acc:#6c7bff;--grn:#2fbf71;--amb:#f5a524;--red:#f31260;--gry:#8a8fb0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+a{color:#9db1ff}
+header{display:flex;align-items:center;gap:14px;padding:14px 22px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;flex-wrap:wrap}
+.logo{font-size:26px;font-weight:800;letter-spacing:.5px}.logo span{color:var(--acc)}
+.tag{color:var(--mut);font-size:13px}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.b-verified{background:#0d3524;color:#4ade80;border:1px solid #1d5c3d}
+.b-inferred{background:#3a2a05;color:#fbbf24;border:1px solid #6b4e0a}
+.b-unknown{background:#3a0d22;color:#fb7185;border:1px solid #6e1236}
+.b-draft{background:#2a2e4a;color:#c3c8ee;border:1px solid var(--line)}
+.b-published{background:#0d3524;color:#4ade80;border:1px solid #1d5c3d}
+main{max-width:1240px;margin:0 auto;padding:20px 16px 60px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h2{font-size:18px;margin-bottom:6px}.card h3{font-size:15px;margin:14px 0 6px}
+.sub{color:var(--mut);font-size:13.5px;line-height:1.55}
+.btn{background:var(--acc);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{filter:brightness(1.12)} .btn:disabled{opacity:.45;cursor:wait}
+.btn.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--txt)}
+.btn.green{background:var(--grn)} .btn.red{background:var(--red)} .btn.small{padding:6px 12px;font-size:12.5px}
+input[type=text],select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--txt);padding:10px 12px;font-size:14px;width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.scorewrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.ring{position:relative;width:150px;height:150px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .num b{font-size:38px}.ring .num small{color:var(--mut);font-size:11px}
+.dim{margin-bottom:9px}.dim .lab{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.bar{height:9px;background:var(--panel2);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);border-radius:6px;transition:width .5s}
+.claim{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;background:var(--panel2)}
+.claim .txt{font-size:14.5px;line-height:1.5}
+.srcs{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+.src{font-size:12px;background:#12142a;border:1px solid var(--line);border-radius:16px;padding:3px 10px;cursor:pointer;color:#b9c3ff}
+.src:hover{border-color:var(--acc)}
+.reason{font-size:12.5px;color:var(--amb);margin-top:5px}
+.gapitem{border-left:3px solid var(--red);background:var(--panel2);padding:9px 12px;border-radius:0 9px 9px 0;margin-bottom:8px;font-size:13.5px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:600}
+.state{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;text-transform:uppercase}
+.st-completed{background:#0d3524;color:#4ade80}.st-inprogress{background:#12303f;color:#38bdf8}.st-blocked{background:#3a0d22;color:#fb7185}.st-pending{background:#2a2e4a;color:#c3c8ee}.st-unassigned{background:#3a2a05;color:#fbbf24}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tab{padding:9px 16px;border-radius:9px;background:var(--panel);border:1px solid var(--line);cursor:pointer;font-size:14px;font-weight:600;color:var(--mut)}
+.tab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.modal{position:fixed;inset:0;background:rgba(5,6,15,.78);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
+.modal.open{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:640px;width:100%;max-height:84vh;overflow:auto;padding:22px}
+.modal pre{white-space:pre-wrap;font-size:13.5px;line-height:1.6;background:var(--panel2);border-radius:9px;padding:13px;margin-top:10px;font-family:inherit}
+.qa-q{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.chip{font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:6px 12px;cursor:pointer}
+.chip:hover{border-color:var(--acc)}
+.answer{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px;font-size:14.5px;line-height:1.6;display:none}
+.answer.refuse{border-color:var(--red)}
+.day{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel2)}
+.day h4{color:var(--acc);margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.6px}
+.day p{font-size:13.5px;line-height:1.5;margin-bottom:5px}
+.kpis{display:flex;gap:14px;flex-wrap:wrap}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 16px;text-align:center}
+.kpi b{font-size:22px;display:block}.kpi small{color:var(--mut);font-size:11.5px}
+.note{font-size:12.5px;color:var(--mut);line-height:1.55}
+.switch{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer;user-select:none}
+.switch input{width:17px;height:17px;accent-color:var(--red)}
+footer{color:var(--mut);font-size:12.5px;text-align:center;padding:24px 12px;line-height:1.7}
+#graph{width:100%;height:430px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:8px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+@media(max-width:640px){.ring{width:120px;height:120px}.ring .num b{font-size:30px}}
