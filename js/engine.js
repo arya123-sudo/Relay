@@ -11,24 +11,27 @@ function claims(){ const c=[];
  DB.decisions.forEach(d=>{ if(d.reason&&liveRefs(d.refs).length){ const l=labelFor(d); c.push({text:`Decision: ${d.text}. Reason: ${d.reason}`,label:l,refs:liveRefs(d.refs),reason:l==='inferred'?'Corroborated by two independent sources (see citations).':null}); }});
  return c; }
 function gaps(){ const g=[];
- DB.decisions.forEach(d=>{ if(!d.reason) g.push({text:`Decision with no recorded reason: "${d.text}" — the discussion happened off-record.`,dim:'decisions'}); else if(liveRefs(d.refs).length===0) g.push({text:`Decision evidence missing: "${d.text}" cannot be verified from the current sources.`,dim:'decisions'}); });
+ DB.decisions.forEach(d=>{ if(d.placeholder) g.push({text:'No explicit decision records found in the fetched sources — the decision history of this project is a gap.',dim:'decisions'}); else if(!d.reason) g.push({text:`Decision with no recorded reason: "${d.text}" — the discussion happened off-record.`,dim:'decisions'}); else if(liveRefs(d.refs).length===0) g.push({text:`Decision evidence missing: "${d.text}" cannot be verified from the current sources.`,dim:'decisions'}); });
  DB.components.forEach(c=>{ if(!liveRefs(c.docRefs).length) g.push({text:`Component with no documentation: ${c.name}.`,dim:'documentation'}); if(!c.owner) g.push({text:`Component with no owner: ${c.name}.`,dim:'ownership'}); });
  DB.work.forEach(w=>{ if(!w.owner) g.push({text:`Work item with no owner: "${w.title}" (${w.state}).`,dim:'ownership'}); if(liveRefs(w.refs).length===0) g.push({text:`Work item with no surviving evidence: "${w.title}".`,dim:'work state'}); });
  const sole={}; DB.components.forEach(c=>{ if(c.owner){ (sole[c.owner]=sole[c.owner]||[]).push(c.name);} });
  return g; }
 function score(){ const W={'work state':25,'decisions':20,'dependencies':20,'ownership':15,'documentation':10,'risks':10};
  const dims={};
- const tot=(arr,f)=>arr.length?arr.filter(f).length/arr.length*100:100;
+ const tot=(arr,f)=>arr.length?arr.filter(f).length/arr.length*100:null;
  dims['work state']=tot(DB.work,w=>liveRefs(w.refs).length>0);
- dims['decisions']=DB.decisions.length?DB.decisions.filter(d=>d.reason&&liveRefs(d.refs).length>0).length/DB.decisions.length*100:100;
- dims['dependencies']=DB.edges.length?DB.edges.filter(e=>liveRefs(e.refs).length>0).length/DB.edges.length*100:100;
+ dims['decisions']=DB.decisions.length?DB.decisions.filter(d=>d.reason&&liveRefs(d.refs).length>0).length/DB.decisions.length*100:null;
+ dims['dependencies']=DB.edges.length?DB.edges.filter(e=>liveRefs(e.refs).length>0).length/DB.edges.length*100:null;
  const needOwn=[...DB.work,...DB.components];
  dims['ownership']=tot(needOwn,x=>!!x.owner);
  dims['documentation']=tot(DB.components,c=>liveRefs(c.docRefs).length>0);
  const risks=DB.work.filter(w=>w.state==='blocked'||w.state==='unassigned');
- dims['risks']=risks.length?risks.filter(w=>liveRefs(w.refs).length>0).length/risks.length*100:100;
- let total=0; for(const k in W) total+=dims[k]*W[k]/100;
- return {total:Math.round(total),dims,W}; }
+ dims['risks']=risks.length?risks.filter(w=>liveRefs(w.refs).length>0).length/risks.length*100:null;
+ /* Dimensions with no items are excluded and the remaining weights are
+    renormalised — an empty dimension must never silently score 100. */
+ let num=0,den=0; for(const k in W){ if(dims[k]===null) continue; num+=dims[k]*W[k]; den+=W[k]; }
+ for(const k in W) if(dims[k]===null) dims[k]=0;
+ return {total:den?Math.round(num/den):0,dims,W}; }
 
 /* ---------- retrieval helpers ---------- */
 const STOP=new Set('the a an is are was were did do does what why how who whom which when where of to in on for and or it its this that with from by at as be been has have had'.split(' '));
