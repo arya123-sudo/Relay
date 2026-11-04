@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relay — Handover Intelligence</title>
+<style>
+:root{--bg:#0f1220;--panel:#171a2e;--panel2:#1e2242;--line:#2c3055;--txt:#eef0ff;--mut:#9aa1c7;--acc:#6c7bff;--grn:#2fbf71;--amb:#f5a524;--red:#f31260;--gry:#8a8fb0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+a{color:#9db1ff}
+header{display:flex;align-items:center;gap:14px;padding:14px 22px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;flex-wrap:wrap}
+.logo{font-size:26px;font-weight:800;letter-spacing:.5px}.logo span{color:var(--acc)}
+.tag{color:var(--mut);font-size:13px}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.b-verified{background:#0d3524;color:#4ade80;border:1px solid #1d5c3d}
+.b-inferred{background:#3a2a05;color:#fbbf24;border:1px solid #6b4e0a}
+.b-unknown{background:#3a0d22;color:#fb7185;border:1px solid #6e1236}
+.b-draft{background:#2a2e4a;color:#c3c8ee;border:1px solid var(--line)}
+.b-published{background:#0d3524;color:#4ade80;border:1px solid #1d5c3d}
+main{max-width:1240px;margin:0 auto;padding:20px 16px 60px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h2{font-size:18px;margin-bottom:6px}.card h3{font-size:15px;margin:14px 0 6px}
+.sub{color:var(--mut);font-size:13.5px;line-height:1.55}
+.btn{background:var(--acc);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{filter:brightness(1.12)} .btn:disabled{opacity:.45;cursor:wait}
+.btn.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--txt)}
+.btn.green{background:var(--grn)} .btn.red{background:var(--red)} .btn.small{padding:6px 12px;font-size:12.5px}
+input[type=text],select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--txt);padding:10px 12px;font-size:14px;width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.scorewrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.ring{position:relative;width:150px;height:150px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .num b{font-size:38px}.ring .num small{color:var(--mut);font-size:11px}
+.dim{margin-bottom:9px}.dim .lab{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.bar{height:9px;background:var(--panel2);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);border-radius:6px;transition:width .5s}
+.claim{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;background:var(--panel2)}
+.claim .txt{font-size:14.5px;line-height:1.5}
+.srcs{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+.src{font-size:12px;background:#12142a;border:1px solid var(--line);border-radius:16px;padding:3px 10px;cursor:pointer;color:#b9c3ff}
+.src:hover{border-color:var(--acc)}
+.reason{font-size:12.5px;color:var(--amb);margin-top:5px}
+.gapitem{border-left:3px solid var(--red);background:var(--panel2);padding:9px 12px;border-radius:0 9px 9px 0;margin-bottom:8px;font-size:13.5px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:600}
+.state{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;text-transform:uppercase}
+.st-completed{background:#0d3524;color:#4ade80}.st-inprogress{background:#12303f;color:#38bdf8}.st-blocked{background:#3a0d22;color:#fb7185}.st-pending{background:#2a2e4a;color:#c3c8ee}.st-unassigned{background:#3a2a05;color:#fbbf24}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tab{padding:9px 16px;border-radius:9px;background:var(--panel);border:1px solid var(--line);cursor:pointer;font-size:14px;font-weight:600;color:var(--mut)}
+.tab.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.modal{position:fixed;inset:0;background:rgba(5,6,15,.78);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
+.modal.open{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:640px;width:100%;max-height:84vh;overflow:auto;padding:22px}
+.modal pre{white-space:pre-wrap;font-size:13.5px;line-height:1.6;background:var(--panel2);border-radius:9px;padding:13px;margin-top:10px;font-family:inherit}
+.qa-q{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.chip{font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:6px 12px;cursor:pointer}
+.chip:hover{border-color:var(--acc)}
+.answer{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px;font-size:14.5px;line-height:1.6;display:none}
+.answer.refuse{border-color:var(--red)}
+.day{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel2)}
+.day h4{color:var(--acc);margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.6px}
+.day p{font-size:13.5px;line-height:1.5;margin-bottom:5px}
+.kpis{display:flex;gap:14px;flex-wrap:wrap}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 16px;text-align:center}
+.kpi b{font-size:22px;display:block}.kpi small{color:var(--mut);font-size:11.5px}
+.note{font-size:12.5px;color:var(--mut);line-height:1.55}
+.switch{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer;user-select:none}
+.switch input{width:17px;height:17px;accent-color:var(--red)}
+footer{color:var(--mut);font-size:12.5px;text-align:center;padding:24px 12px;line-height:1.7}
+#graph{width:100%;height:430px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:8px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+@media(max-width:640px){.ring{width:120px;height:120px}.ring .num b{font-size:30px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">RE<span>LAY</span></div>
+  <div class="tag">When someone leaves, the knowledge stays.<br>Handover intelligence — evidence-linked, confidence-labelled, scored.</div>
+  <div style="margin-left:auto" class="row">
+    <span id="statusBadge" class="badge b-draft">Draft — not yet approved</span>
+  </div>
+</header>
+<main>
+  <!-- CONNECT -->
+  <div class="card" id="connectCard">
+    <h2>1 · Connect a project</h2>
+    <p class="sub">Relay reconstructs a departing member's work from project evidence — commits, pull requests, issues, reviews and documents — and builds a handover a successor can trust. Start with the built-in sample project, or ingest any <b>public GitHub repository</b> live.</p>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" onclick="loadSample(false)">▶ Load sample project — PayNest</button>
+      <span class="sub">Departing member: <b style="color:var(--txt)">Arjun Mehta</b>, Backend Lead</span>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <input type="text" id="repoInput" style="flex:1;min-width:260px" placeholder="Public GitHub repo — e.g. https://github.com/arya123-sudo/project-idea-novelty-checker">
+      <button class="btn ghost" id="ghBtn" onclick="loadGitHub()">Ingest GitHub repo</button>
+    </div>
+    <p class="note" style="margin-top:9px">GitHub ingestion uses the public REST API (read-only). The departing member is detected as the most active contributor. Private repos and chat history are never read.</p>
+    <p id="ingestMsg" class="sub" style="margin-top:8px"></p>
+  </div>
+
+  <div id="app" style="display:none">
+    <!-- SCORE -->
+    <div class="card">
+      <h2>2 · Handover Completeness Score</h2>
+      <div class="scorewrap">
+        <div class="ring">
+          <svg width="150" height="150" viewBox="0 0 150 150"><circle cx="75" cy="75" r="64" fill="none" stroke="#23264a" stroke-width="13"/><circle id="ringArc" cx="75" cy="75" r="64" fill="none" stroke="#6c7bff" stroke-width="13" stroke-linecap="round" stroke-dasharray="402" stroke-dashoffset="402"/></svg>
+          <div class="num"><b id="scoreNum">–</b><small>COMPLETENESS / 100</small></div>
+        </div>
+        <div style="flex:1;min-width:260px" id="dims"></div>
+        <div class="kpis" id="kpis"></div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <label class="switch"><input type="checkbox" id="halfToggle" onchange="toggleHalf()"> <span><b>Demo mode:</b> remove half the sources and rebuild — watch the score fall, gaps appear, and the assistant refuse.</span></label>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <div class="tab on" data-t="report" onclick="showTab('report')">Handover Report</div>
+      <div class="tab" data-t="graph" onclick="showTab('graph')">Knowledge Graph</div>
+      <div class="tab" data-t="ask" onclick="showTab('ask')">Ask Relay</div>
+      <div class="tab" data-t="plan" onclick="showTab('plan')">First-Week Plan</div>
+      <div class="tab" data-t="review" onclick="showTab('review')">Review &amp; Approve</div>
+    </div>
+
+    <div id="tab-report"></div>
+    <div id="tab-graph" style="display:none">
+      <div class="card"><h2>Knowledge dependency graph</h2>
+      <p class="sub">People, components, work items and decisions — and what blocks or depends on what. Built only from evidence records.</p>
+      <div style="margin-top:12px"><svg id="graph"></svg></div>
+      <div class="legend"><span><i class="dot" style="background:#6c7bff"></i>Person</span><span><i class="dot" style="background:#2fbf71"></i>Component</span><span><i class="dot" style="background:#38bdf8"></i>Work item</span><span><i class="dot" style="background:#f5a524"></i>Decision</span><span style="color:#fb7185">— red line = blocks</span><span>— grey line = depends on / owns / decided</span></div>
+      </div>
+    </div>
+    <div id="tab-ask" style="display:none">
+      <div class="card"><h2>Ask Relay — grounded Q&amp;A</h2>
+      <p class="sub">Answers come <b>only</b> from the evidence store and always cite a source. If the evidence is not there, Relay says so instead of guessing — that refusal is a feature, not a failure.</p>
+      <div class="qa-q" id="presetQ"></div>
+      <div class="row"><input type="text" id="qInput" style="flex:1;min-width:240px" placeholder="Ask about this project — e.g. Why did the team switch to Razorpay?" onkeydown="if(event.key==='Enter')ask()"><button class="btn" onclick="ask()">Ask</button></div>
+      <div class="answer" id="answerBox" style="margin-top:14px"></div>
+      </div>
+    </div>
+    <div id="tab-plan" style="display:none"></div>
+    <div id="tab-review" style="display:none"></div>
+  </div>
+  <footer>Relay · Team <b>Vibe and Theme</b> · WCC Forge 48 — Round 2 Build · Arya Yaligar (lead) · Sanjana · Sanika · Vajresh · Acharya Institute of Technology, Bengaluru<br>Confidence rules: <b>Verified</b> = directly stated in a cited source · <b>Inferred</b> = corroborated by 2+ sources, reasoning shown · <b>Unknown</b> = no evidence found, listed as a gap — never invented. The completeness score is computed deterministically from evidence coverage; no AI model can inflate it.</footer>
+</main>
+
+<div class="modal" id="srcModal"><div class="box">
+  <div class="row" style="justify-content:space-between"><h3 id="srcTitle">Source</h3><button class="btn ghost small" onclick="document.getElementById('srcModal').classList.remove('open')">Close ✕</button></div>
+  <p class="sub" id="srcMeta"></p><pre id="srcBody"></pre>
+  <p style="margin-top:10px"><a id="srcLink" href="#" target="_blank" rel="noopener">Open original source ↗</a></p>
+</div></div>
+<script>
+/* ============ RELAY ENGINE — deterministic, evidence-first ============ */
+const $=id=>document.getElementById(id);
+let DB=null; // {project, departing, evidence[], work[], decisions[], components[], edges[], members[]}
+let halfMode=false, approved=false;
+
+/* ---------- SAMPLE PROJECT: PayNest (hostel fee payment portal) ---------- */
+function sampleDB(){
+ const E=[
+  {id:'e1',type:'issue',ref:'Issue #12',batch:'B',author:'sara-iqbal',date:'2026-08-14',title:'UPI payments failing on Stripe in India',url:'#',body:'Students paying hostel fees from UPI apps see failed checkouts on Stripe. UPI is how most of our students pay. We need a gateway with first-class UPI support and lower per-transaction fees for Indian payments.'},
+  {id:'e2',type:'pr',ref:'PR #42',batch:'B',author:'arjun-mehta',date:'2026-09-02',title:'Switch payment gateway from Stripe to Razorpay',url:'#',body:'Switches checkout from Stripe to Razorpay. Reason: Razorpay supports UPI natively and charges lower fees on domestic transactions, which fixes the failed UPI checkouts reported by students. Stripe code is kept behind a flag for one release in case of rollback.'},
+  {id:'e3',type:'commit',ref:'Commit a91f3c',batch:'B',author:'arjun-mehta',date:'2026-09-03',title:'feat(payments): Razorpay order creation + webhook verify',url:'#',body:'Adds Razorpay order creation, signature verification on the payment webhook, and idempotency keys so a retried webhook never double-credits a fee payment.'},
+  {id:'e4',type:'pr',ref:'PR #38',batch:'A',author:'sara-iqbal',date:'2026-08-21',title:'Nightly fee-ledger reconciliation job',url:'#',body:'Adds a nightly reconciliation job comparing the fee ledger against gateway settlements. Chosen over real-time reconciliation because settlement files arrive once a day, so real-time checks would compare against incomplete data.'},
+  {id:'e5',type:'doc',ref:'Doc: ADR-003',batch:'B',author:'arjun-mehta',date:'2026-08-22',title:'ADR-003 — Reconciliation strategy',url:'#',body:'Decision: reconcile nightly, not in real time. Settlement data from the gateway is published once daily; nightly reconciliation is simpler, cheaper, and matches the data that actually exists. Mismatches are written to a review queue for the accounts team.'},
+  {id:'e6',type:'pr',ref:'PR #45',batch:'A',author:'arjun-mehta',date:'2026-09-18',title:'Auth refactor: rotating refresh tokens',url:'#',body:'Replaces long-lived refresh tokens with rotating refresh tokens and reuse detection. Work in progress: token issuance is done, but the migration of existing sessions is blocked until the token-service migration (Issue #18) lands.'},
+  {id:'e7',type:'review',ref:'Review on PR #45',batch:'B',author:'meena-kulkarni',date:'2026-09-19',title:'Review: rotation chosen for session security',url:'#',body:'Approving the direction: rotating refresh tokens with reuse detection were chosen because a leaked token then invalidates the whole session family, which limits account-takeover damage for student accounts.'},
+  {id:'e8',type:'issue',ref:'Issue #18',batch:'A',author:'arjun-mehta',date:'2026-09-10',title:'Token-service migration to new auth provider',url:'#',body:'Migrating the token service to the new auth provider. BLOCKED: waiting on the provider to enable our organisation workspace. This blocks the auth refactor (PR #45) and the login rate-limiting work. No workaround exists until the workspace is enabled.'},
+  {id:'e9',type:'issue',ref:'Issue #21',batch:'A',author:'arjun-mehta',date:'2026-09-25',title:'SMS fallback when fee-reminder emails bounce',url:'#',body:'About 18% of fee-reminder emails bounce (full inboxes, wrong addresses). Adding an SMS fallback through the notification service so reminders still reach students before the late-fee date. In progress: templates done, vendor integration pending.'},
+  {id:'e10',type:'issue',ref:'Issue #27',batch:'A',author:'sara-iqbal',date:'2026-10-01',title:'Refund webhook retries have no owner',url:'#',body:'When a refund webhook fails, nothing retries it and nobody is assigned. Two refunds needed manual fixing last month. Needs an owner, retry queue with backoff, and an alert. Currently unassigned.'},
+  {id:'e11',type:'issue',ref:'Issue #24',batch:'B',author:'rohan-verma',date:'2026-09-28',title:'Admin dashboard: hostel-wise fee reports',url:'#',body:'Wardens need hostel-wise collection and defaulter reports from the admin dashboard. Not started: waiting on the fee-ledger export format to stabilise. Dashboard has no written documentation yet.'},
+  {id:'e12',type:'commit',ref:'Commit c77d21',batch:'A',author:'arjun-mehta',date:'2026-08-30',title:'feat(receipts): PDF fee receipts with QR verification',url:'#',body:'Generates PDF fee receipts after successful payment, with a QR code the office can scan to verify the receipt against the ledger.'},
+  {id:'e13',type:'doc',ref:'Doc: Runbook',batch:'A',author:'arjun-mehta',date:'2026-09-05',title:'Deployment runbook — PayNest production',url:'#',body:'Production deploys from the main branch via the hosting pipeline. Rollback: redeploy the previous release tag. Database migrations must run before the app deploy. The payment webhook secret lives in the hosting environment variables, never in the repo.'},
+  {id:'e14',type:'issue',ref:'Issue #9',batch:'A',author:'meena-kulkarni',date:'2026-08-05',title:'Web-first: postpone the mobile app',url:'#',body:'Decision from planning: stay web-first this semester and postpone the mobile app. Most fee payments happen in the two weeks before term start, on shared family devices, so a responsive web app covers the real usage. Revisit after the payment flow is stable.'},
+  {id:'e15',type:'commit',ref:'Commit e03b8a',batch:'B',author:'arjun-mehta',date:'2026-08-06',title:'chore: defer native app scaffolding',url:'#',body:'Removes the experimental native app scaffold. Per planning (Issue #9) the team stays web-first; the scaffold can be restored from history if the decision changes.'},
+  {id:'e16',type:'issue',ref:'Issue #30',batch:'A',author:'arjun-mehta',date:'2026-10-03',title:'SMS vendor selection for notification fallback',url:'#',body:'We need an SMS vendor for the notification fallback (Issue #21). Two vendors were compared on price per SMS and delivery reports. The final selection and its reason were discussed on a call and are not recorded here.'},
+  {id:'e17',type:'issue',ref:'Issue #31',batch:'A',author:'arjun-mehta',date:'2026-10-04',title:'Rate-limit the login endpoint',url:'#',body:'Login endpoint has no rate limiting. Add per-account and per-IP limits. Depends on the auth refactor (PR #45) landing first, because limits must key on the new session model.'},
+  {id:'e18',type:'commit',ref:'Commit 5be912',batch:'B',author:'sara-iqbal',date:'2026-08-25',title:'feat(ledger): hostel-wise defaulter export (CSV)',url:'#',body:'Exports hostel-wise fee defaulters as CSV for wardens, generated from the reconciled ledger so figures match settlements.'},
+  {id:'e19',type:'doc',ref:'Doc: API notes',batch:'B',author:'arjun-mehta',date:'2026-09-12',title:'API notes — payments and ledger',url:'#',body:'Payments API: create-order, verify-webhook, refund. Ledger API: entries, reconciliation status, exports. Auth tokens are bearer tokens issued by the token service. The notification service has no API documentation yet.'},
+  {id:'e20',type:'pr',ref:'PR #47',batch:'B',author:'arjun-mehta',date:'2026-10-05',title:'WIP: notification service scaffolding',url:'#',body:'Scaffolding for the notification service (email + SMS channels behind one interface). Open and unfinished: channel interface merged, SMS channel not wired. Arjun is the only person who has worked on this service.'}
+ ];
+ const work=[
+  {id:'w1',title:'Razorpay payment integration',state:'completed',owner:'arjun-mehta',refs:['e2','e3'],component:'Payment Gateway'},
+  {id:'w2',title:'Auth refactor — rotating refresh tokens',state:'blocked',owner:'arjun-mehta',refs:['e6','e8'],component:'Auth Service',blockedBy:'w8'},
+  {id:'w3',title:'Nightly fee-ledger reconciliation',state:'completed',owner:'sara-iqbal',refs:['e4'],component:'Fee Ledger'},
+  {id:'w4',title:'SMS fallback for bounced fee reminders',state:'inprogress',owner:'arjun-mehta',refs:['e9'],component:'Notification Service'},
+  {id:'w5',title:'PDF fee receipts with QR verification',state:'completed',owner:'arjun-mehta',refs:['e12'],component:'Payment Gateway'},
+  {id:'w6',title:'Refund webhook retries',state:'unassigned',owner:null,refs:['e10'],component:'Payment Gateway'},
+  {id:'w7',title:'Admin dashboard hostel-wise fee reports',state:'pending',owner:'rohan-verma',refs:['e11'],component:'Admin Dashboard'},
+  {id:'w8',title:'Token-service migration',state:'blocked',owner:'arjun-mehta',refs:['e8'],component:'Auth Service'},
+  {id:'w9',title:'Hostel-wise defaulter CSV export',state:'completed',owner:'sara-iqbal',refs:['e18'],component:'Fee Ledger'},
+  {id:'w10',title:'Rate-limit the login endpoint',state:'inprogress',owner:'arjun-mehta',refs:['e17'],component:'Auth Service'}
+ ];
+ const decisions=[
+  {id:'d1',text:'Switch the payment gateway from Stripe to Razorpay',reason:'Razorpay supports UPI natively and charges lower fees on domestic transactions; Stripe UPI checkouts were failing for students.',refs:['e2','e1'],direct:true},
+  {id:'d2',text:'Use rotating refresh tokens with reuse detection',reason:'A leaked token invalidates the whole session family, limiting account-takeover damage.',refs:['e6','e7'],direct:false},
+  {id:'d3',text:'Reconcile the fee ledger nightly, not in real time',reason:'Gateway settlement files are published once a day, so real-time checks would compare against incomplete data.',refs:['e5','e4'],direct:true},
+  {id:'d4',text:'Stay web-first; postpone the mobile app',reason:'Most payments happen on shared family devices before term start, so responsive web covers real usage.',refs:['e14','e15'],direct:false},
+  {id:'d5',text:'SMS vendor selection for the notification fallback',reason:null,refs:['e16'],direct:false}
+ ];
+ const components=[
+  {id:'c1',name:'Payment Gateway',owner:'arjun-mehta',docRefs:['e19','e13']},
+  {id:'c2',name:'Auth Service',owner:'arjun-mehta',docRefs:['e19']},
+  {id:'c3',name:'Fee Ledger',owner:'sara-iqbal',docRefs:['e5','e19']},
+  {id:'c4',name:'Notification Service',owner:'arjun-mehta',docRefs:[]},
+  {id:'c5',name:'Admin Dashboard',owner:'rohan-verma',docRefs:[]}
+ ];
+ const edges=[
+  {from:'w2',to:'w8',rel:'blocked by',refs:['e6','e8']},
+  {from:'w10',to:'w2',rel:'depends on',refs:['e17']},
+  {from:'c1',to:'c2',rel:'depends on',refs:['e19']},
+  {from:'c3',to:'c1',rel:'depends on',refs:['e4']},
+  {from:'w4',to:'c4',rel:'depends on',refs:['e9']},
+  {from:'d1',to:'c1',rel:'changed',refs:['e2']},
+  {from:'d2',to:'c2',rel:'changed',refs:['e6']},
+  {from:'arjun-mehta',to:'c4',rel:'owns (sole contributor)',refs:['e20']}
+ ];
+ return {project:'PayNest — hostel fee payment portal',departing:'arjun-mehta',departingName:'Arjun Mehta (Backend Lead)',evidence:E,work,decisions,components,edges,
+ members:['arjun-mehta','sara-iqbal','rohan-verma','meena-kulkarni']};
+}
+
+/* ---------- confidence + scoring (deterministic) ---------- */
+function liveRefs(refs){ if(!DB) return []; const gone=new Set(DB.evidence.filter(e=>halfMode&&e.batch==='B').map(e=>e.id)); return refs.filter(r=>!gone.has(r)); }
+function labelFor(item){ const n=liveRefs(item.refs).length; if(n===0) return 'unknown'; if(item.direct&&n>=1) return 'verified'; if(n>=2) return 'inferred'; return item.direct?'verified':'inferred'; }
+function claims(){ const c=[];
+ DB.work.forEach(w=>{const l=labelFor(w); c.push({text:`"${w.title}" is ${w.state==='inprogress'?'in progress':w.state}${w.owner?` — owned by ${w.owner}`:' — no owner'}`,label:l,refs:liveRefs(w.refs),reason:l==='inferred'?'Derived from corroborating project records.':null});});
+ DB.decisions.forEach(d=>{ if(d.reason&&liveRefs(d.refs).length){ const l=labelFor(d); c.push({text:`Decision: ${d.text}. Reason: ${d.reason}`,label:l,refs:liveRefs(d.refs),reason:l==='inferred'?'Corroborated by two independent sources (see citations).':null}); }});
+ return c; }
+function gaps(){ const g=[];
+ DB.decisions.forEach(d=>{ if(!d.reason) g.push({text:`Decision with no recorded reason: "${d.text}" — the discussion happened off-record.`,dim:'decisions'}); else if(liveRefs(d.refs).length===0) g.push({text:`Decision evidence missing: "${d.text}" cannot be verified from the current sources.`,dim:'decisions'}); });
+ DB.components.forEach(c=>{ if(!liveRefs(c.docRefs).length) g.push({text:`Component with no documentation: ${c.name}.`,dim:'documentation'}); if(!c.owner) g.push({text:`Component with no owner: ${c.name}.`,dim:'ownership'}); });
+ DB.work.forEach(w=>{ if(!w.owner) g.push({text:`Work item with no owner: "${w.title}" (${w.state}).`,dim:'ownership'}); if(liveRefs(w.refs).length===0) g.push({text:`Work item with no surviving evidence: "${w.title}".`,dim:'work state'}); });
+ const sole={}; DB.components.forEach(c=>{ if(c.owner){ (sole[c.owner]=sole[c.owner]||[]).push(c.name);} });
+ return g; }
+function score(){ const W={'work state':25,'decisions':20,'dependencies':20,'ownership':15,'documentation':10,'risks':10};
+ const dims={};
+ const tot=(arr,f)=>arr.length?arr.filter(f).length/arr.length*100:100;
+ dims['work state']=tot(DB.work,w=>liveRefs(w.refs).length>0);
+ dims['decisions']=DB.decisions.length?DB.decisions.filter(d=>d.reason&&liveRefs(d.refs).length>0).length/DB.decisions.length*100:100;
+ dims['dependencies']=DB.edges.length?DB.edges.filter(e=>liveRefs(e.refs).length>0).length/DB.edges.length*100:100;
+ const needOwn=[...DB.work,...DB.components];
+ dims['ownership']=tot(needOwn,x=>!!x.owner);
+ dims['documentation']=tot(DB.components,c=>liveRefs(c.docRefs).length>0);
+ const risks=DB.work.filter(w=>w.state==='blocked'||w.state==='unassigned');
+ dims['risks']=risks.length?risks.filter(w=>liveRefs(w.refs).length>0).length/risks.length*100:100;
+ let total=0; for(const k in W) total+=dims[k]*W[k]/100;
+ return {total:Math.round(total),dims,W}; }
+
+/* ---------- rendering ---------- */
+function evById(id){ return DB.evidence.find(e=>e.id===id); }
+function srcBtn(id){ const e=evById(id); if(!e) return ''; return `<span class="src" onclick="showSrc('${id}')">${e.ref}</span>`; }
+function showSrc(id){ const e=evById(id); if(!e) return; $('srcTitle').textContent=e.ref+' — '+e.title; $('srcMeta').textContent=`${e.type.toUpperCase()} · by ${e.author} · ${e.date}`; $('srcBody').textContent=e.body; const l=$('srcLink'); if(e.url&&e.url!=='#'){l.href=e.url;l.style.display='inline';} else l.style.display='none'; $('srcModal').classList.add('open'); }
+function badge(l){ return `<span class="badge b-${l}">${l}</span>`; }
+function render(){ if(!DB) return; const s=score();
+ $('app').style.display='block';
+ $('scoreNum').textContent=s.total; $('ringArc').style.strokeDashoffset=402-(402*s.total/100);
+ $('ringArc').style.stroke=s.total>=70?'#2fbf71':s.total>=45?'#f5a524':'#f31260';
+ $('dims').innerHTML=Object.keys(s.dims).map(k=>`<div class="dim"><div class="lab"><span style="text-transform:capitalize">${k} <span style="color:var(--mut)">(weight ${s.W[k]}%)</span></span><b>${Math.round(s.dims[k])}</b></div><div class="bar"><i style="width:${s.dims[k]}%"></i></div></div>`).join('');
+ const evCount=DB.evidence.filter(e=>!(halfMode&&e.batch==='B')).length;
+ $('kpis').innerHTML=`<div class="kpi"><b>${evCount}</b><small>evidence records</small></div><div class="kpi"><b>${claims().filter(c=>c.label==='verified').length}</b><small>verified claims</small></div><div class="kpi"><b>${gaps().length}</b><small>named gaps</small></div><div class="kpi"><b>${DB.work.filter(w=>w.state==='blocked').length}</b><small>blocked items</small></div>`;
+ renderReport(); renderGraph(); renderPlan(); renderReview(); renderPresets(); }
+function renderReport(){ const g=gaps();
+ const workRows=DB.work.map(w=>`<tr><td>${w.title}</td><td><span class="state st-${w.state}">${w.state==='inprogress'?'in progress':w.state}</span></td><td>${w.owner||'<span style="color:var(--amb)">— none —</span>'}</td><td>${w.component}</td><td>${liveRefs(w.refs).map(srcBtn).join(' ')||'<span class="badge b-unknown">no evidence</span>'}</td></tr>`).join('');
+ $('tab-report').innerHTML=`
+ <div class="card"><h2>Handover report — ${DB.project}</h2>
+ <p class="sub">Departing member: <b style="color:var(--txt)">${DB.departingName||DB.departing}</b> · Status: ${approved?'<span class="badge b-published">Published — approved by reviewer</span>':'<span class="badge b-draft">Draft — awaiting review</span>'} · Every claim below is labelled and linked to its source. Click any source chip to trace it.</p></div>
+ <div class="grid">
+ <div class="card"><h3>Key claims (confidence-labelled)</h3>${claims().map(c=>`<div class="claim"><div class="row" style="justify-content:space-between"><span class="txt">${c.text}</span>${badge(c.label)}</div>${c.reason&&c.label==='inferred'?`<div class="reason">Inference: ${c.reason}</div>`:''}<div class="srcs">${c.refs.map(srcBtn).join('')}</div></div>`).join('')}</div>
+ <div class="card"><h3>Knowledge gaps — what Relay does <i>not</i> know</h3><p class="sub" style="margin-bottom:10px">Unknowns are named, never filled in by invention.</p>${g.length?g.map(x=>`<div class="gapitem">${x.text}</div>`).join(''):'<p class="sub">No gaps detected in the current evidence.</p>'}</div>
+ </div>
+ <div class="card"><h3>Work state — everything the departing member touched</h3><table><tr><th>Work item</th><th>State</th><th>Owner</th><th>Component</th><th>Evidence</th></tr>${workRows}</table></div>`; }
+function nodeName(id){ if(DB.members.includes(id)) return id; const w=DB.work.find(x=>x.id===id); if(w) return w.title; const c=DB.components.find(x=>x.id===id); if(c) return c.name; const d=DB.decisions.find(x=>x.id===id); if(d) return d.text; return id; }
+function nodeKind(id){ if(DB.members.includes(id)) return 'person'; if(DB.work.find(x=>x.id===id)) return 'work'; if(DB.components.find(x=>x.id===id)) return 'comp'; return 'dec'; }
+function renderGraph(){ const svg=$('graph'); const cols={person:90,comp:330,work:600,dec:920}; const kinds={person:DB.members,comp:DB.components.map(c=>c.id),work:DB.work.map(w=>w.id),dec:DB.decisions.map(d=>d.id)};
+ const pos={}; for(const k in kinds){ kinds[k].forEach((id,i)=>{ pos[id]={x:cols[k],y:34+i*(400/Math.max(kinds[k].length,1))}; }); }
+ const colr={person:'#6c7bff',comp:'#2fbf71',work:'#38bdf8',dec:'#f5a524'};
+ let h='';
+ DB.edges.forEach(e=>{ const a=pos[e.from],b=pos[e.to]; if(!a||!b) return; const blocked=e.rel.includes('blocked'); h+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${blocked?'#f31260':'#4a4f7d'}" stroke-width="${blocked?2:1.2}" stroke-dasharray="${blocked?'5 3':''}"><title>${e.rel}</title></line>`; });
+ for(const id in pos){ const p=pos[id]; const name=nodeName(id); const short=name.length>26?name.slice(0,25)+'…':name; h+=`<circle cx="${p.x}" cy="${p.y}" r="7" fill="${colr[nodeKind(id)]}"><title>${name}</title></circle><text x="${p.x+12}" y="${p.y+4}" fill="#c9cdf2" font-size="11.5">${short}</text>`; }
+ svg.setAttribute('viewBox','0 0 1120 430'); svg.innerHTML=h; }
+function planItems(){ const blocks={}; DB.work.forEach(w=>{ if(w.blockedBy) blocks[w.blockedBy]=(blocks[w.blockedBy]||0)+1; });
+ const open=DB.work.filter(w=>w.state!=='completed');
+ const prio=w=>{ let p=50; if(w.state==='blocked') p-=30; p-=(blocks[w.id]||0)*15; if(w.state==='inprogress') p-=8; if(w.state==='unassigned') p-=4; return p; };
+ return open.sort((a,b)=>prio(a)-prio(b)); }
+function renderPlan(){ const items=planItems(); const days=['Monday','Tuesday','Wednesday','Thursday','Friday']; const per=Math.max(1,Math.ceil(items.length/5));
+ let cards=''; for(let d=0;d<5;d++){ const slice=items.slice(d*per,(d+1)*per); cards+=`<div class="day"><h4>${days[d]}</h4>${slice.length?slice.map(w=>`<p><b>${w.title}</b><br><span style="color:var(--mut)">${w.state==='blocked'?'Blocked — chase the blocker first; it unblocks other work.':w.state==='unassigned'?'Unassigned — pick this up and own it.':'Continue and finish.'} (${w.component})</span></p>`).join(''):'<p style="color:var(--mut)">Buffer / documentation catch-up.</p>'}</div>`; }
+ $('tab-plan').innerHTML=`<div class="card"><h2>First-week action plan for the successor</h2><p class="sub">Ranked by Relay's planner: blocked work that unblocks other work first, then in-progress work, then unassigned quick wins.</p><div class="grid" style="margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">${cards}</div></div>`; }
+function renderReview(){ $('tab-review').innerHTML=`<div class="card"><h2>Review &amp; approval gate</h2>
+ <p class="sub">No handover reaches the successor unverified. The reviewer (team lead) checks claims against their sources, can fill a named gap with a note — which becomes new evidence and raises the score — and then approves or rejects.</p>
+ <div class="row" style="margin-top:14px">
+   <button class="btn green" onclick="approve()" ${approved?'disabled':''}>${approved?'✓ Approved &amp; published':'Approve &amp; publish handover'}</button>
+   <button class="btn red" onclick="reject()">Reject — send back</button>
+   <span class="sub" id="reviewMsg"></span>
+ </div>
+ <h3>Fill a gap (adds evidence, score recomputes)</h3>
+ <div class="row"><select id="gapSel" style="flex:1;min-width:220px">${gaps().map((g,i)=>`<option value="${i}">${g.text.slice(0,90)}</option>`).join('')||'<option>No gaps</option>'}</select></div>
+ <div class="row" style="margin-top:9px"><input type="text" id="gapNote" style="flex:1;min-width:240px" placeholder="Reviewer note that resolves this gap — e.g. the missing reason or owner"><button class="btn ghost" onclick="fillGap()">Add note as evidence</button></div>
+ </div>`; }
+function approve(){ approved=true; $('statusBadge').className='badge b-published'; $('statusBadge').textContent='Published — approved'; $('reviewMsg').textContent='Handover approved and published to the successor.'; render(); }
+function reject(){ approved=false; $('statusBadge').className='badge b-draft'; $('statusBadge').textContent='Draft — sent back by reviewer'; const m=$('reviewMsg'); if(m) m.textContent='Sent back for corrections. The handover stays in Draft.'; }
+function fillGap(){ const note=$('gapNote').value.trim(); if(!note){ alert('Write the note first.'); return; }
+ const id='note'+Date.now(); DB.evidence.push({id,type:'note',ref:'Reviewer note',batch:'A',author:'reviewer (team lead)',date:'2026-11-04',title:'Reviewer correction',url:'#',body:note});
+ const sel=$('gapSel'); const gtext=sel.options[sel.selectedIndex].text;
+ const dec=DB.decisions.find(d=>gtext.includes(d.text.slice(0,25))&&!d.reason); if(dec){ dec.reason=note+' (supplied by reviewer at approval gate)'; dec.refs.push(id); dec.direct=true; }
+ const w=DB.work.find(x=>gtext.includes(x.title.slice(0,25))&&!x.owner); if(w){ w.owner='successor (assigned at review)'; w.refs.push(id); if(w.state==='unassigned') w.state='pending'; }
+ const comp=DB.components.find(c=>gtext.includes(c.name)&&!liveRefs(c.docRefs).length); if(comp){ comp.docRefs.push(id); }
+ render(); showTab('review'); const m=$('reviewMsg'); if(m) m.textContent='Note added as evidence — claims and score updated.'; }
+
+/* ---------- grounded Q&A ---------- */
+const STOP=new Set('the a an is are was were did do does what why how who whom which when where of to in on for and or it its this that with from by at as be been has have had'.split(' '));
+function tokens(s){ return s.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(t=>t.length>2&&!STOP.has(t)); }
+function ask(q){ q=q||$('qInput').value; const box=$('answerBox'); box.style.display='block'; if(!q.trim()){ box.className='answer refuse'; box.textContent='Ask a question about the project first.'; return; }
+ const ql=q.toLowerCase(); const qt0=tokens(q);
+ const gapDec=DB.decisions.find(d=>!d.reason&&qt0.filter(t=>tokens(d.text).includes(t)).length>=2);
+ if(gapDec){ box.className='answer refuse'; box.innerHTML=`<b style="color:#fb7185">I can't answer that from the evidence.</b><br>“${gapDec.text}” is a recorded decision, but <b>its reason was never recorded</b> in any source — it is listed as a knowledge gap for the reviewer. Relay will not invent a reason.`; return; }
+ if(/blocked/.test(ql)){ const bl=DB.work.filter(w=>w.state==='blocked'); box.className='answer'; box.innerHTML=bl.length?`Blocked right now: ${bl.map(w=>`<b>${w.title}</b>`).join('; ')}. The blocker evidence: ${[...new Set(bl.flatMap(w=>liveRefs(w.refs)))].map(srcBtn).join(' ')}`:'Nothing is marked blocked in the current evidence.'; return; }
+ if(/complete|finished|done before|shipped/.test(ql)){ const done=DB.work.filter(w=>w.state==='completed'&&(!w.owner||w.owner===DB.departing)); box.className='answer'; box.innerHTML=done.length?`${DB.departingName||DB.departing} completed: ${done.map(w=>`<b>${w.title}</b>`).join('; ')}.<div class="srcs" style="margin-top:9px"><span style="font-size:12px;color:var(--mut)">Sources:</span> ${[...new Set(done.flatMap(w=>liveRefs(w.refs)))].map(srcBtn).join(' ')}</div>`:'No completed work by the departing member is evidenced.'; return; }
+ if(/who owns|owner of|responsible for/.test(ql)){ const comp=DB.components.find(c=>ql.includes(c.name.toLowerCase().split(' ')[0])); box.className='answer'; box.innerHTML=comp?`<b>${comp.name}</b> is owned by <b>${comp.owner||'nobody — this is a named gap'}</b>.`:'Ownership: '+DB.components.map(c=>`${c.name} → ${c.owner||'NO OWNER (gap)'}`).join('; '); return; }
+ const active=DB.evidence.filter(e=>!(halfMode&&e.batch==='B'));
+ const qt=tokens(q); let best=null,bs=0;
+ active.forEach(e=>{ const et=tokens(e.title+' '+e.body); const hit=qt.filter(t=>et.includes(t)).length; const sc=hit/Math.max(qt.length,1); if(sc>bs){bs=sc;best=e;} });
+ if(!best||bs<0.34){ box.className='answer refuse'; box.innerHTML=`<b style="color:#fb7185">I can't answer that from the evidence.</b><br>No source in the current evidence store supports an answer to “${q}”. Relay will not guess — this is recorded as a knowledge gap for the reviewer.`; return; }
+ const sentences=best.body.split(/(?<=[.!])\s+/); const rel=sentences.filter(s=>{ const st=tokens(s); return qt.some(t=>st.includes(t)); });
+ const ans=(rel.length?rel:sentences.slice(0,2)).join(' ');
+ box.className='answer'; box.innerHTML=`${ans}<div class="srcs" style="margin-top:9px"><span style="font-size:12px;color:var(--mut)">Source:</span> ${srcBtn(best.id)} <span class="badge b-verified">grounded</span></div>`; }
+function renderPresets(){ const qs=['Why did the team switch to Razorpay?','What work is blocked, and why?','What did Arjun complete before leaving?','Why was that SMS vendor chosen?','How does deployment rollback work?'];
+ $('presetQ').innerHTML=qs.map(q=>`<span class="chip" onclick="document.getElementById('qInput').value=this.textContent;ask()">${q}</span>`).join(''); }
+
+/* ---------- source toggle / tabs ---------- */
+function toggleHalf(){ halfMode=$('halfToggle').checked; approved=false; $('statusBadge').className='badge b-draft'; $('statusBadge').textContent='Draft — not yet approved'; render(); }
+function showTab(t){ document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t===t)); ['report','graph','ask','plan','review'].forEach(x=>$('tab-'+x).style.display=x===t?'block':'none'); }
+function loadSample(){ DB=sampleDB(); halfMode=false; $('halfToggle').checked=false; approved=false; $('statusBadge').className='badge b-draft'; $('statusBadge').textContent='Draft — not yet approved'; $('ingestMsg').innerHTML=`Ingested <b>20 evidence records</b> for PayNest (commits, PRs, issues, reviews, documents). Handover reconstructed for departing member <b>Arjun Mehta</b>.`; render(); showTab('report'); window.scrollTo({top:document.getElementById('app').offsetTop-70,behavior:'smooth'}); }
+
+/* ---------- GitHub ingestion (public repos, read-only REST) ---------- */
+async function gh(path){ const r=await fetch('https://api.github.com'+path,{headers:{'Accept':'application/vnd.github+json'}}); if(!r.ok) throw new Error('GitHub API '+r.status+' on '+path); return r.json(); }
+async function loadGitHub(){ const raw=$('repoInput').value.trim(); const m=raw.match(/github\.com\/([^\/\s]+)\/([^\/\s#?]+)/)||raw.match(/^([^\/\s]+)\/([^\/\s]+)$/);
+ if(!m){ $('ingestMsg').textContent='Paste a public GitHub repository URL (owner/repo).'; return; }
+ const owner=m[1],repo=m[2].replace(/\.git$/,''); const btn=$('ghBtn'); btn.disabled=true; $('ingestMsg').textContent='Ingesting '+owner+'/'+repo+' — commits, pull requests, issues, contributors…';
+ try{
+  const [meta,commits,pulls,issues,contributors,contents]=await Promise.all([gh(`/repos/${owner}/${repo}`),gh(`/repos/${owner}/${repo}/commits?per_page=30`),gh(`/repos/${owner}/${repo}/pulls?state=all&per_page=30`),gh(`/repos/${owner}/${repo}/issues?state=all&per_page=40`),gh(`/repos/${owner}/${repo}/contributors?per_page=10`),gh(`/repos/${owner}/${repo}/contents`).catch(()=>[])]);
+  const E=[]; let n=0; const nid=()=>'g'+(++n);
+  commits.forEach(c=>E.push({id:nid(),type:'commit',ref:'Commit '+(c.sha||'').slice(0,6),batch:n%2?'B':'A',author:(c.author&&c.author.login)||(c.commit.author&&c.commit.author.name)||'unknown',date:(c.commit.author&&c.commit.author.date||'').slice(0,10),title:(c.commit.message||'').split('\n')[0],url:c.html_url,body:c.commit.message||''}));
+  pulls.forEach(p=>E.push({id:nid(),type:'pr',ref:'PR #'+p.number,batch:p.number%2?'B':'A',author:p.user.login,date:(p.created_at||'').slice(0,10),title:p.title,url:p.html_url,body:(p.body||'')+'\nState: '+(p.merged_at?'merged':p.state)+'.'}));
+  issues.filter(i=>!i.pull_request).forEach(i=>E.push({id:nid(),type:'issue',ref:'Issue #'+i.number,batch:i.number%2?'B':'A',author:i.user.login,date:(i.created_at||'').slice(0,10),title:i.title,url:i.html_url,body:(i.body||'')+'\nState: '+i.state+'.'}));
+  const departing=contributors.length?contributors[0].login:(commits[0]&&commits[0].author?commits[0].author.login:'unknown');
+  const work=[];
+  issues.filter(i=>!i.pull_request).forEach(i=>{ const body=(i.body||'').toLowerCase(); work.push({id:'w'+i.number,title:i.title,state:i.state==='closed'?'completed':(body.includes('blocked')?'blocked':(i.assignees&&i.assignees.length?'inprogress':'unassigned')),owner:i.assignees&&i.assignees.length?i.assignees[0].login:(i.state==='closed'?i.user.login:null),refs:[E.find(e=>e.ref==='Issue #'+i.number).id],component:'General'}); });
+  pulls.forEach(p=>{ work.push({id:'wp'+p.number,title:p.title,state:p.merged_at?'completed':(p.state==='open'?'inprogress':'pending'),owner:p.user.login,refs:[E.find(e=>e.ref==='PR #'+p.number).id],component:'General'}); });
+  const KEY=/decid|decision|switch|migrat|chose|adopt|replace|because|instead/i;
+  const decisions=[]; E.filter(e=>(e.type==='pr'||e.type==='issue')&&KEY.test(e.title+' '+e.body)).slice(0,8).forEach((e,i)=>{ const reasoned=/because|reason|so that|in order/i.test(e.body); const corr=E.find(x=>x.id!==e.id&&tokens(x.title).some(t=>tokens(e.title).includes(t))); decisions.push({id:'d'+i,text:e.title,reason:reasoned?e.body.split(/(?<=[.!])\s+/).find(s=>/because|reason|so that/i.test(s))||'Reason stated in the source record.':null,refs:corr?[e.id,corr.id]:[e.id],direct:reasoned}); });
+  if(!decisions.length) decisions.push({id:'d0',text:'No explicit decision records found in this repository',reason:null,refs:[],direct:false});
+  const dirs=Array.isArray(contents)?contents.filter(c=>c.type==='dir').slice(0,6):[];
+  const components=(dirs.length?dirs:[{name:'Main codebase'}]).map((d,i)=>({id:'c'+i,name:d.name,owner:departing,docRefs:E.filter(e=>/readme|doc/i.test(e.title)).map(e=>e.id).slice(0,2)}));
+  work.forEach(w=>{ if(components.length) w.component=components[0].name; });
+  const edges=[]; work.filter(w=>w.state==='blocked').slice(0,4).forEach((w,i)=>edges.push({from:w.id,to:components[0].id,rel:'blocked in',refs:w.refs}));
+  if(components.length>1) edges.push({from:components[0].id,to:components[1].id,rel:'depends on',refs:E.slice(0,1).map(e=>e.id)});
+  edges.push({from:departing,to:components[0].id,rel:'owns',refs:E.filter(e=>e.author===departing).slice(0,1).map(e=>e.id)});
+  const members=[...new Set([...contributors.map(c=>c.login),...E.map(e=>e.author)])].slice(0,8);
+  DB={project:meta.full_name+' — '+(meta.description||'GitHub repository'),departing,departingName:departing+' (most active contributor)',evidence:E,work,decisions,components,edges,members};
+  halfMode=false; $('halfToggle').checked=false; approved=false;
+  $('ingestMsg').innerHTML=`Ingested <b>${E.length} evidence records</b> from ${meta.full_name}. Departing member detected: <b>${departing}</b>.`; render(); showTab('report');
+ }catch(err){ $('ingestMsg').textContent='Ingestion failed: '+err.message+'. Check the repo is public, or use the sample project.'; }
+ btn.disabled=false; }
+</script>
+</body>
+</html>
