@@ -12,6 +12,8 @@ Built by team **Vibe and Theme** (Arya Yaligar — lead, Sanjana, Sanika, Vajres
 
 ![Relay handover report — completeness score 91, confidence-labelled claims, named gaps](docs/img/demo-report.png)
 
+**Backup demo video:** [Relay_Demo_Walkthrough.mp4](docs/Relay_Demo_Walkthrough.mp4) (48 seconds, captioned) — the full judge script below, recorded from the live app, in case a live demo ever fails.
+
 **10-minute judge demo script**
 1. **Connect (0–2 min):** Click *Load sample project — PayNest*. 20 evidence records are ingested; the handover for departing backend lead Arjun Mehta is reconstructed. Or paste any **public GitHub repo URL** and click *Ingest GitHub repo* — Relay pulls commits, PRs, issues and contributors live from the GitHub REST API and detects the departing member (most active contributor).
 2. **Read & trace (2–5 min):** The report opens with a completeness score of **91/100** and confidence-labelled claims. Click any source chip (e.g. *PR #42*) to see the exact evidence behind a claim. Note the 4 named gaps — including a decision whose reason was never recorded.
