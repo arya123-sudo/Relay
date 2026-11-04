@@ -78,4 +78,7 @@ function renderPresets(){ const qs=['Why did the team switch to Razorpay?','What
 /* ---------- source toggle / tabs ---------- */
 function toggleHalf(){ halfMode=$('halfToggle').checked; approved=false; $('statusBadge').className='badge b-draft'; $('statusBadge').textContent='Draft — not yet approved'; render(); }
 function showTab(t){ document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t===t)); ['report','graph','ask','plan','review'].forEach(x=>$('tab-'+x).style.display=x===t?'block':'none'); }
+/* Deep link: ?demo=sample opens the app with the sample handover loaded —
+   judges land inside the product, not on an empty connect screen. */
+if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('demo')==='sample'){ window.addEventListener('DOMContentLoaded',()=>loadSample()); }
 function loadSample(){ DB=sampleDB(); halfMode=false; $('halfToggle').checked=false; approved=false; $('statusBadge').className='badge b-draft'; $('statusBadge').textContent='Draft — not yet approved'; $('ingestMsg').innerHTML=`Ingested <b>20 evidence records</b> for PayNest (commits, PRs, issues, reviews, documents). Handover reconstructed for departing member <b>Arjun Mehta</b>.`; render(); showTab('report'); window.scrollTo({top:document.getElementById('app').offsetTop-70,behavior:'smooth'}); }

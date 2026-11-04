@@ -8,7 +8,9 @@ Built by team **Vibe and Theme** (Arya Yaligar — lead, Sanjana, Sanika, Vajres
 
 ## Live demo
 
-Open `index.html` in any browser (or the hosted link in our Round 2 submission). No build step, no server, no API key.
+**[Open Relay with the sample handover already loaded →](https://arya123-sudo.github.io/Relay/?demo=sample)** — no build step, no server, no API key. (`index.html` in any static host works the same.)
+
+![Relay handover report — completeness score 91, confidence-labelled claims, named gaps](docs/img/demo-report.png)
 
 **10-minute judge demo script**
 1. **Connect (0–2 min):** Click *Load sample project — PayNest*. 20 evidence records are ingested; the handover for departing backend lead Arjun Mehta is reconstructed. Or paste any **public GitHub repo URL** and click *Ingest GitHub repo* — Relay pulls commits, PRs, issues and contributors live from the GitHub REST API and detects the departing member (most active contributor).
