@@ -30,9 +30,36 @@ Open `index.html` in any browser (or the hosted link in our Round 2 submission).
 - **First-Week Action Planner** — blocked-unblocking work first, then dependency-central work, then quick wins, laid out Monday–Friday.
 - **Human review & approval gate** — handover stays Draft until a reviewer approves; reviewers can fill gaps with notes that become new evidence and raise the score.
 
+## Repository structure
+
+```
+index.html            page shell — loads the modules below, no build step
+styles.css            all presentation
+js/sample-data.js     the PayNest sample project (20 evidence records, known answer set)
+js/engine.js          deterministic core: confidence labels, completeness score, gaps, planner ranking
+js/github.js          GitHub REST ingestion + generic extraction for any public repo
+js/app.js             UI: report, graph, Q&A, review gate, source-trace modal
+docs/ARCHITECTURE.md  components, data flow, and the layered hallucination controls
+docs/SCORING.md       the completeness-score formula, denominators, and a worked example
+tests/engine.test.js  headless tests for scoring, gaps, labels, Q&A refusal, planner
+```
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md) — how evidence flows from sources to a published handover, and the six layered controls that keep generated content honest.
+- [How scoring works](docs/SCORING.md) — the exact formula and denominators behind the 0–100 score, with the sample project worked through by hand (91 with full sources, 68 with half removed).
+
+## Running the tests
+
+```
+npm test        # or: node tests/engine.test.js
+```
+
+The suite loads the real browser modules headlessly and asserts: score determinism (91 full / 68 half), gap growth (4 → 10), Verified/Inferred labelling, Q&A answering with evidence, Q&A refusal when evidence is absent or removed, and planner ranking. CI runs it on every push.
+
 ## Technology & implementation
 
-Single-file web app (`index.html`, vanilla HTML/CSS/JavaScript) so the demo can never fail on a build step, a cold server, or an API quota — a deliberate Round 2 reliability decision. GitHub ingestion uses the public GitHub REST API (read-only, no token). Extraction is **rule-based and deterministic** — the fallback architecture our Round 1 proposal specified (work state derived from issue/PR states; decisions marked Unknown unless cited) — so the system cannot hallucinate: no claim exists without a source record, and the completeness score is pure counting over the evidence graph.
+Dependency-free web app (vanilla HTML/CSS/JavaScript, modular, no build step) so the demo can never fail on a build, a cold server, or an API quota — a deliberate Round 2 reliability decision. GitHub ingestion uses the public GitHub REST API (read-only, no token). Extraction is **rule-based and deterministic** — the fallback architecture our Round 1 proposal specified (work state derived from issue/PR states; decisions marked Unknown unless cited) — so the system cannot hallucinate: no claim exists without a source record, and the completeness score is pure counting over the evidence graph.
 
 **Changes from the Round 1 plan** (full detail in the updated project PDF): stack simplified from React + FastAPI + Supabase/pgvector + Gemini to a client-side deterministic engine for Round 2 reliability (Gemini's free tier caps current Flash models at tens of requests/day, which a full ingest would exceed); GitHub App auth replaced by public-repo REST ingestion; document upload deferred. The proposal's layered hallucination controls that remain fully in force: retrieval grounding, confidence labels, deterministic scoring, Q&A refusal, and the human approval gate.
 
